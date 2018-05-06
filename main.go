@@ -9,15 +9,14 @@ import (
 	"math/rand"
 	"time"
 	"image/color"
-	"fmt"
 )
 
 var src = rand.NewSource(time.Now().UnixNano())
 var r = rand.New(src)
 
 var factor = 10
-var lengthX = 99
-var lengthY = 71
+var lengthX = 101
+var lengthY = 77
 var collection = map[string]Square{}
 var beginIndex = "1|1"
 var currentIndex string
@@ -26,7 +25,6 @@ var colorMap = map[int]color.RGBA{
 	0: colornames.Black,
 	1: colornames.White,
 	2: colornames.Aqua,
-	11: colornames.Red,
 }
 
 type Square struct {
@@ -56,18 +54,13 @@ func generate(lengthX int, lengthY int) {
 			if x+1 == lengthX || x == 0 || y+1 == lengthY || y == 0 || x%2 != 1 || y%2 != 1 {
 				square.state = 0
 			} else {
-				if beginIndex == "" && randBool((lengthX+lengthY)/2) {
-					beginIndex = getIndex(x, y)
-				} else {
-					square.state = 1
-				}
+				square.state = 1
 			}
 			collection[getIndex(x, y)] = square
 		}
 	}
 	//Create paths
-	currentIndex = beginIndex
-	updateWay(currentIndex)
+	updateWay(beginIndex)
 
 	for len(crossways) > 0 {
 		crossway := crossways[0]
@@ -75,7 +68,22 @@ func generate(lengthX int, lengthY int) {
 		updateWay(crossway)
 
 	}
+	setStart()
+	setFinish()
 	return
+}
+func setStart()  {
+	element := collection[getIndex(0,1)]
+	element.state = 2
+	element.pass = true
+	collection[getIndex(0,1)] = element
+}
+
+func setFinish()  {
+	element := collection[getIndex(lengthX-1,lengthY-2)]
+	element.state = 2
+	element.pass = true
+	collection[getIndex(lengthX-1,lengthY-2)] = element
 }
 
 func setPass(index string) {
@@ -85,20 +93,19 @@ func setPass(index string) {
 	collection[index] = element
 }
 
-func updateWay(indexWay string){
+func updateWay(indexWay string) {
 	siblings := getSiblings(indexWay)
 	if len(siblings) > 1 {
-		crossways = append(crossways,currentIndex)
+		crossways = append(crossways, indexWay)
 	}
 	for len(siblings) > 0 {
 		if len(siblings) > 1 {
-			crossways = append(crossways,indexWay)
+			crossways = append(crossways, indexWay)
 		}
 		if len(siblings) > 0 {
 			nextIndex := siblings[r.Intn(len(siblings))]
 			for _, index := range getMediator(collection[indexWay], collection[nextIndex]) {
 				setPass(index)
-				fmt.Println(index)
 				indexWay = index
 			}
 		}
@@ -126,29 +133,29 @@ func getSiblings(index string) (list []string) {
 func getMediator(square1 Square, square2 Square) (list []string) {
 	for square1.x > square2.x {
 		square1.x--
-		list = append(list,getIndex(square1.x, square1.y))
+		list = append(list, getIndex(square1.x, square1.y))
 	}
 
 	for square1.x < square2.x {
 		square1.x++
-		list = append(list,getIndex(square1.x, square1.y))
+		list = append(list, getIndex(square1.x, square1.y))
 	}
 
 	for square1.y > square2.y {
 		square1.y--
-		list = append(list,getIndex(square1.x, square1.y))
+		list = append(list, getIndex(square1.x, square1.y))
 	}
 
 	for square1.y < square2.y {
 		square1.y++
-		list = append(list,getIndex(square1.x, square1.y))
+		list = append(list, getIndex(square1.x, square1.y))
 	}
 	return
 }
 
 func run() {
 	cfg := pixelgl.WindowConfig{
-		Title:  "Pixel Rocks!",
+		Title:  "Random Labyrinth!",
 		Bounds: pixel.R(0, 0, 1010, 768),
 		VSync:  true,
 	}
