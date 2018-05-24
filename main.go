@@ -7,39 +7,29 @@ import (
     "github.com/faiface/pixel/imdraw"
 )
 
+var window *pixelgl.Window
+
 func run() {
-    cfg := pixelgl.WindowConfig{
+    var win, err = pixelgl.NewWindow(pixelgl.WindowConfig{
         Title:  "Random Labyrinth!",
-        Bounds: pixel.R(0, 0, 1010, 768),
+        Bounds: pixel.R(0, 0, 1010, 770),
         VSync:  true,
-    }
-    win, err := pixelgl.NewWindow(cfg)
+    })
     if err != nil {
         panic(err)
     }
-    imd := imdraw.New(win)
-    //if win.Pressed(pixelgl.KeyLeft) {
-    //    camPos.X -= camSpeed * dt
-    //}
-    if win.Pressed(pixelgl.KeyRight) {
-
-    }
-    //if win.Pressed(pixelgl.KeyDown) {
-    //    camPos.Y -= camSpeed * dt
-    //}
-    //if win.Pressed(pixelgl.KeyUp) {
-    //   camPos.Y += camSpeed * dt
-    //}
-    for _, square := range collection {
-        imd.Color = square.getColor()
-        imd.Push(square.rect.Min, square.rect.Max)
-        imd.Rectangle(0)
-    }
-
-    for !win.Closed() {
-        win.Clear(colornames.White)
-        imd.Draw(win)
-        win.Update()
+    window = win
+    for !window.Closed() {
+        imd := imdraw.New(window)
+        window.Clear(colornames.White)
+        keywordEvents()
+        for _, square := range collection {
+            imd.Color = square.getColor()
+            imd.Push(square.rect.Min, square.rect.Max)
+            imd.Rectangle(0)
+        }
+        imd.Draw(window)
+        window.Update()
     }
 }
 
@@ -49,7 +39,37 @@ func main() {
 
 }
 
-func playerStep()  {
-
+func getRouteIndex() (index string) {
+    switch true {
+    case window.Pressed(pixelgl.KeyLeft):
+        return getIndex(getCurrent().x-1, getCurrent().y)
+    case window.Pressed(pixelgl.KeyRight):
+        return getIndex(getCurrent().x+1, getCurrent().y)
+    case window.Pressed(pixelgl.KeyDown):
+        return getIndex(getCurrent().x, getCurrent().y-1)
+    case window.Pressed(pixelgl.KeyUp):
+        return getIndex(getCurrent().x, getCurrent().y+1)
+    }
+    return currentIndex
 }
 
+func keywordEvents() {
+    destinationIndex := getRouteIndex()
+    if destinationIndex != currentIndex {
+        for _, sibling := range getCurrent().getSiblings(1) {
+            if sibling == destinationIndex {
+                doStep(destinationIndex)
+            }
+        }
+    }
+}
+
+func doStep(destinationIndex string) {
+    c := getCurrent()
+    c.state = PlayerWay
+    c.save()
+    currentIndex = destinationIndex
+    c = getCurrent()
+    c.state = Player
+    c.save()
+}

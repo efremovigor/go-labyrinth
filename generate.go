@@ -24,14 +24,21 @@ var r = rand.New(src)
 //Индексы лабиринта
 var collection = map[string]Square{}
 //Индексы начала и конца лабиринта
-var startIndex, finishIndex string
+var startIndex, finishIndex, currentIndex string
+
+const Wall = 0
+const Channel = 1
+const Player = 2
+const Finish = 3
+const PlayerWay = 4
 
 //Цвета либинта
 var colorMap = map[int]color.RGBA{
-    0: colornames.Black,
-    1: colornames.White,
-    2: colornames.Gold,
-    3: colornames.Green,
+    Wall:      colornames.Black,
+    Channel:   colornames.White,
+    Player:    colornames.Blue,
+    Finish:    colornames.White,
+    PlayerWay: colornames.Lightblue,
 }
 //Куб
 type Square struct {
@@ -42,6 +49,7 @@ type Square struct {
     y     int
     pass  bool
 }
+
 //назначение кода цвета
 func (s *Square) getColor() color.RGBA {
     return colorMap[s.state]
@@ -56,9 +64,9 @@ func generate(lengthX int, lengthY int) {
             rect := pixel.R(float64(x*factor), float64(y*factor), float64(factor+x*factor), float64(factor+y*factor))
             square := Square{x: x, y: y, rect: rect}
             if x+1 == lengthX || x == 0 || y+1 == lengthY || y == 0 || x%2 != 1 || y%2 != 1 {
-                square.state = 0
+                square.state = Wall
             } else {
-                square.state = 1
+                square.state = Channel
             }
             collection[getIndex(x, y)] = square
         }
@@ -72,7 +80,7 @@ func generate(lengthX int, lengthY int) {
         updateWay(crossway)
     }
 
-    for _ ,item := range collection {
+    for _, item := range collection {
         item.pass = false
         item.save()
     }
@@ -84,7 +92,7 @@ func generate(lengthX int, lengthY int) {
 //выбор точки старта
 func setStart() {
     var x, y int
-    if r.Intn(1) == 1 {
+    if r.Intn(2) == 1 {
         x = oddRandom(lengthX)
         y = 0
     } else {
@@ -92,8 +100,9 @@ func setStart() {
         y = oddRandom(lengthY)
     }
     startIndex = getIndex(x, y)
+    currentIndex = startIndex
     element := collection[startIndex]
-    element.state = 2
+    element.state = Player
     element.pass = true
     element.save()
 }
@@ -105,19 +114,18 @@ func setFinish() {
     y := lengthY - (element.y + 1)
     finishIndex = getIndex(x, y)
     element = collection[finishIndex]
-    element.state = 3
+    element.state = Finish
     element.pass = true
     element.save()
 }
 
-
 func (s Square) save() {
-    collection[getIndex(s.x,s.y)] = s
+    collection[getIndex(s.x, s.y)] = s
 }
 
 //Делает одну итерацию генерации(генерирует ветку маршрута)
 func updateWay(indexWay string) {
-    siblings := getSiblings(indexWay)
+    siblings := collection[indexWay].getSiblings(2)
     if len(siblings) > 1 {
         crossways = append(crossways, indexWay)
     }
@@ -129,30 +137,29 @@ func updateWay(indexWay string) {
             nextIndex := siblings[r.Intn(len(siblings))]
             for _, index := range getMediator(collection[indexWay], collection[nextIndex]) {
                 element := collection[index]
-                element.state = 1
+                element.state = Channel
                 element.pass = true
                 element.save()
                 indexWay = index
             }
         }
-        siblings = getSiblings(indexWay)
+        siblings = collection[indexWay].getSiblings(2)
     }
 }
 
-//получить сосе
-func getSiblings(index string) (list []string) {
-    rect := collection[index]
-    if current, ok := collection[getIndex(rect.x, rect.y-2)]; ok && current.pass == false {
-        list = append(list, getIndex(rect.x, rect.y-2))
+//получить соседей
+func (s Square) getSiblings(step int) (list []string) {
+    if current, ok := collection[getIndex(s.x, s.y-step)]; ok && current.pass == false && current.state != 0 {
+        list = append(list, getIndex(s.x, s.y-step))
     }
-    if current, ok := collection[getIndex(rect.x, rect.y+2)]; ok && current.pass == false {
-        list = append(list, getIndex(rect.x, rect.y+2))
+    if current, ok := collection[getIndex(s.x, s.y+step)]; ok && current.pass == false && current.state != 0 {
+        list = append(list, getIndex(s.x, s.y+step))
     }
-    if current, ok := collection[getIndex(rect.x-2, rect.y)]; ok && current.pass == false {
-        list = append(list, getIndex(rect.x-2, rect.y))
+    if current, ok := collection[getIndex(s.x-step, s.y)]; ok && current.pass == false && current.state != 0 {
+        list = append(list, getIndex(s.x-step, s.y))
     }
-    if current, ok := collection[getIndex(rect.x+2, rect.y)]; ok && current.pass == false {
-        list = append(list, getIndex(rect.x+2, rect.y))
+    if current, ok := collection[getIndex(s.x+step, s.y)]; ok && current.pass == false && current.state != 0 {
+        list = append(list, getIndex(s.x+step, s.y))
     }
     return
 }
@@ -178,4 +185,9 @@ func getMediator(square1 Square, square2 Square) (list []string) {
         list = append(list, getIndex(square1.x, square1.y))
     }
     return
+}
+
+func getCurrent() *Square {
+    s := collection[currentIndex]
+    return &s
 }
