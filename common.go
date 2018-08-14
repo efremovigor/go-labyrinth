@@ -14,4 +14,3 @@ func oddRandom(limit int) (n int) {
 func getIndex(x int, y int) string {
     return strconv.Itoa(x) + "|" + strconv.Itoa(y)
 }
-

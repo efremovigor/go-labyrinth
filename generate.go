@@ -26,19 +26,23 @@ var collection = map[string]Square{}
 //Индексы начала и конца лабиринта
 var startIndex, finishIndex, currentIndex string
 
-const Wall = 0
-const Channel = 1
-const Player = 2
-const Finish = 3
-const PlayerWay = 4
+const WallColor = 0
+const ChannelColor = 1
+const PlayerColor = 2
+const FinishColor = 3
+const PlayerWayColor = 4
+const BotColor = 5
+const BotWayColor = 6
 
 //Цвета либинта
 var colorMap = map[int]color.RGBA{
-    Wall:      colornames.Black,
-    Channel:   colornames.White,
-    Player:    colornames.Blue,
-    Finish:    colornames.White,
-    PlayerWay: colornames.Lightblue,
+    WallColor:      colornames.Black,
+    ChannelColor:   colornames.White,
+    PlayerColor:    colornames.Blue,
+    FinishColor:    colornames.White,
+    PlayerWayColor: colornames.Lightblue,
+    BotColor:       colornames.Red,
+    BotWayColor:    colornames.Lightsalmon,
 }
 //Куб
 type Square struct {
@@ -64,9 +68,9 @@ func generate(lengthX int, lengthY int) {
             rect := pixel.R(float64(x*factor), float64(y*factor), float64(factor+x*factor), float64(factor+y*factor))
             square := Square{x: x, y: y, rect: rect}
             if x+1 == lengthX || x == 0 || y+1 == lengthY || y == 0 || x%2 != 1 || y%2 != 1 {
-                square.state = Wall
+                square.state = WallColor
             } else {
-                square.state = Channel
+                square.state = ChannelColor
             }
             collection[getIndex(x, y)] = square
         }
@@ -102,7 +106,7 @@ func setStart() {
     startIndex = getIndex(x, y)
     currentIndex = startIndex
     element := collection[startIndex]
-    element.state = Player
+    element.state = PlayerColor
     element.pass = true
     element.save()
 }
@@ -114,7 +118,7 @@ func setFinish() {
     y := lengthY - (element.y + 1)
     finishIndex = getIndex(x, y)
     element = collection[finishIndex]
-    element.state = Finish
+    element.state = FinishColor
     element.pass = true
     element.save()
 }
@@ -137,7 +141,7 @@ func updateWay(indexWay string) {
             nextIndex := siblings[r.Intn(len(siblings))]
             for _, index := range getMediator(collection[indexWay], collection[nextIndex]) {
                 element := collection[index]
-                element.state = Channel
+                element.state = ChannelColor
                 element.pass = true
                 element.save()
                 indexWay = index
@@ -185,9 +189,4 @@ func getMediator(square1 Square, square2 Square) (list []string) {
         list = append(list, getIndex(square1.x, square1.y))
     }
     return
-}
-
-func getCurrent() *Square {
-    s := collection[currentIndex]
-    return &s
 }

@@ -8,6 +8,11 @@ import (
 )
 
 var window *pixelgl.Window
+var bot Bot
+
+type Bot struct {
+    currentIndex string
+}
 
 func run() {
     var win, err = pixelgl.NewWindow(pixelgl.WindowConfig{
@@ -23,6 +28,7 @@ func run() {
         imd := imdraw.New(window)
         window.Clear(colornames.White)
         keywordEvents()
+        bot.botProcess()
         for _, square := range collection {
             imd.Color = square.getColor()
             imd.Push(square.rect.Min, square.rect.Max)
@@ -35,28 +41,15 @@ func run() {
 
 func main() {
     generate(lengthX, lengthY)
+    player = Player{currentIndex: currentIndex}
+    bot = Bot{currentIndex: currentIndex}
     pixelgl.Run(run)
-
-}
-
-func getRouteIndex() (index string) {
-    switch true {
-    case window.Pressed(pixelgl.KeyLeft):
-        return getIndex(getCurrent().x-1, getCurrent().y)
-    case window.Pressed(pixelgl.KeyRight):
-        return getIndex(getCurrent().x+1, getCurrent().y)
-    case window.Pressed(pixelgl.KeyDown):
-        return getIndex(getCurrent().x, getCurrent().y-1)
-    case window.Pressed(pixelgl.KeyUp):
-        return getIndex(getCurrent().x, getCurrent().y+1)
-    }
-    return currentIndex
 }
 
 func keywordEvents() {
-    destinationIndex := getRouteIndex()
-    if destinationIndex != currentIndex {
-        for _, sibling := range getCurrent().getSiblings(1) {
+    destinationIndex := getPlayerRouteIndex()
+    if destinationIndex != player.currentIndex {
+        for _, sibling := range player.getPlayerIndex().getSiblings(1) {
             if sibling == destinationIndex {
                 doStep(destinationIndex)
             }
@@ -64,12 +57,11 @@ func keywordEvents() {
     }
 }
 
-func doStep(destinationIndex string) {
-    c := getCurrent()
-    c.state = PlayerWay
-    c.save()
-    currentIndex = destinationIndex
-    c = getCurrent()
-    c.state = Player
-    c.save()
+func (bot Bot) botProcess(){
+    bot.getPoint().getSiblings(1)
+}
+
+func (bot Bot) getPoint() *Square {
+    s := collection[bot.currentIndex]
+    return &s
 }
