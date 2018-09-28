@@ -8,11 +8,6 @@ import (
 )
 
 var window *pixelgl.Window
-var bot Bot
-
-type Bot struct {
-    currentIndex string
-}
 
 func run() {
     var win, err = pixelgl.NewWindow(pixelgl.WindowConfig{
@@ -28,7 +23,7 @@ func run() {
         imd := imdraw.New(window)
         window.Clear(colornames.White)
         keywordEvents()
-        bot.botProcess()
+        bot.autoSearch()
         for _, square := range collection {
             imd.Color = square.getColor()
             imd.Push(square.rect.Min, square.rect.Max)
@@ -41,8 +36,7 @@ func run() {
 
 func main() {
     generate(lengthX, lengthY)
-    player = Player{currentIndex: currentIndex}
-    bot = Bot{currentIndex: currentIndex}
+    initPlayers()
     pixelgl.Run(run)
 }
 
@@ -57,11 +51,8 @@ func keywordEvents() {
     }
 }
 
-func (bot Bot) botProcess(){
-    bot.getPoint().getSiblings(1)
-}
-
-func (bot Bot) getPoint() *Square {
-    s := collection[bot.currentIndex]
-    return &s
+func initPlayers()  {
+    player.setStart()
+    player.setFinish()
+    bot = player
 }

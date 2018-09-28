@@ -23,8 +23,6 @@ var r = rand.New(src)
 
 //Индексы лабиринта
 var collection = map[string]Square{}
-//Индексы начала и конца лабиринта
-var startIndex, finishIndex, currentIndex string
 
 const WallColor = 0
 const ChannelColor = 1
@@ -88,39 +86,8 @@ func generate(lengthX int, lengthY int) {
         item.pass = false
         item.save()
     }
-    setStart()
-    setFinish()
+
     return
-}
-
-//выбор точки старта
-func setStart() {
-    var x, y int
-    if r.Intn(2) == 1 {
-        x = oddRandom(lengthX)
-        y = 0
-    } else {
-        x = 0
-        y = oddRandom(lengthY)
-    }
-    startIndex = getIndex(x, y)
-    currentIndex = startIndex
-    element := collection[startIndex]
-    element.state = PlayerColor
-    element.pass = true
-    element.save()
-}
-
-//Выбор точки финиша
-func setFinish() {
-    element := collection[startIndex]
-    x := lengthX - (element.x + 1)
-    y := lengthY - (element.y + 1)
-    finishIndex = getIndex(x, y)
-    element = collection[finishIndex]
-    element.state = FinishColor
-    element.pass = true
-    element.save()
 }
 
 func (s Square) save() {
@@ -167,7 +134,7 @@ func (s Square) getSiblings(step int) (list []string) {
     }
     return
 }
-
+//отдает все индексы от одного куба до другого
 func getMediator(square1 Square, square2 Square) (list []string) {
     for square1.x > square2.x {
         square1.x--
