@@ -37,6 +37,7 @@ func (player *Player) doStep(destinationIndex string) {
 	player.currentIndex = destinationIndex
 	c = player.getPlayerIndex()
 	c.state = player.color
+	c.visited = true
 	c.save()
 }
 
@@ -59,7 +60,7 @@ func (player *Player) setStart() {
 	player.currentIndex = player.startIndex
 	element := collection[player.startIndex]
 	element.state = player.colorWay
-	element.pass = true
+	element.visited = true
 	element.save()
 }
 
@@ -71,7 +72,7 @@ func (player *Player) setFinish() {
 	player.finishIndex = getIndex(x, y)
 	element = collection[player.finishIndex]
 	element.state = FinishColor
-	element.pass = false
+	element.visited = false
 	element.save()
 }
 
@@ -79,7 +80,7 @@ func (player *Player) autoSearch() {
 	if player.currentIndex == player.finishIndex {
 		return
 	}
-	siblings := collection[player.currentIndex].getSiblings(1, []int{player.colorWay})
+	siblings := collection[player.currentIndex].getSiblings(1, []int{player.colorWay}, false)
 	var next string
 	if len(siblings) > 1 {
 		player.history = append(player.history, player.currentIndex)

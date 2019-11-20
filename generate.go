@@ -49,12 +49,13 @@ var colorMap = map[int]color.RGBA{
 
 //Куб
 type Square struct {
-	state int
-	color color.RGBA
-	rect  pixel.Rect
-	x     int
-	y     int
-	pass  bool
+	state   int
+	color   color.RGBA
+	rect    pixel.Rect
+	x       int
+	y       int
+	visited bool
+	worked  bool
 }
 
 //назначение кода цвета
@@ -87,11 +88,6 @@ func generate(lengthX int, lengthY int) {
 		updateWay(crossway)
 	}
 
-	for _, item := range collection {
-		item.pass = false
-		item.save()
-	}
-
 	return
 }
 
@@ -101,7 +97,7 @@ func (s Square) save() {
 
 //Делает одну итерацию генерации(генерирует ветку маршрута)
 func updateWay(indexWay string) {
-	siblings := collection[indexWay].getSiblings(2, []int{})
+	siblings := collection[indexWay].getSiblings(2, []int{}, true)
 	if len(siblings) > 1 {
 		crossways = append(crossways, indexWay)
 	}
@@ -114,31 +110,41 @@ func updateWay(indexWay string) {
 			for _, index := range getMediator(collection[indexWay], collection[nextIndex]) {
 				element := collection[index]
 				element.state = ChannelColor
-				element.pass = true
+				element.worked = true
 				element.save()
 				indexWay = index
 			}
 		}
-		siblings = collection[indexWay].getSiblings(2, []int{})
+		siblings = collection[indexWay].getSiblings(2, []int{}, true)
 	}
 }
 
 //получить соседей
-func (s Square) getSiblings(step int, toExclude []int) (list []string) {
+func (s Square) getSiblings(step int, toExclude []int, isGenerate bool) (list []string) {
+	coords := map[int]map[int]int{
+		0: {0: s.x, 1: s.y - step},
+		1: {0: s.x, 1: s.y + step},
+		2: {0: s.x - step, 1: s.y},
+		3: {0: s.x + step, 1: s.y},
+	}
 	toExclude = append(toExclude, WallColor)
-	if current, ok := collection[getIndex(s.x, s.y-step)]; ok && current.pass == false && isNotState(current.state, toExclude) {
-		list = append(list, getIndex(s.x, s.y-step))
+
+	for i := 0; i < len(coords); i++ {
+		item := s.getSiblingsByCoords(coords[i][0], coords[i][1], toExclude, isGenerate)
+		if item != nil {
+			list = append(list, *item)
+		}
 	}
-	if current, ok := collection[getIndex(s.x, s.y+step)]; ok && current.pass == false && isNotState(current.state, toExclude) {
-		list = append(list, getIndex(s.x, s.y+step))
-	}
-	if current, ok := collection[getIndex(s.x-step, s.y)]; ok && current.pass == false && isNotState(current.state, toExclude) {
-		list = append(list, getIndex(s.x-step, s.y))
-	}
-	if current, ok := collection[getIndex(s.x+step, s.y)]; ok && current.pass == false && isNotState(current.state, toExclude) {
-		list = append(list, getIndex(s.x+step, s.y))
-	}
+
 	return
+}
+
+func (s Square) getSiblingsByCoords(x int, y int, toExclude []int, isGenerate bool) (coords *string) {
+	if current, ok := collection[getIndex(x, y)]; ok && ((isGenerate && current.worked == false) || (isGenerate == false && current.visited == false)) && isNotState(current.state, toExclude) {
+		coords := getIndex(x, y)
+		return &coords
+	}
+	return nil
 }
 
 func isNotState(state int, states []int) bool {

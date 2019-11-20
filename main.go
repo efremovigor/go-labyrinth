@@ -43,7 +43,7 @@ func main() {
 func keywordEvents() {
 	destinationIndex := getPlayerRouteIndex()
 	if destinationIndex != player.currentIndex {
-		for _, sibling := range player.getPlayerIndex().getSiblings(1, []int{}) {
+		for _, sibling := range player.getPlayerIndex().getSiblings(1, []int{}, false) {
 			if sibling == destinationIndex {
 				player.doStep(destinationIndex)
 			}
